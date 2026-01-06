@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mini Minecraft Mobile</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: Arial, sans-serif; }
+        canvas { display: block; width: 100vw; height: 56.25vw; /* 16:9 Ratio */ max-height: 100vh; max-width: 177.78vh; margin: auto; }
+        
+        /* Mobile Controls */
+        #controls { position: absolute; bottom: 20px; left: 20px; width: 150px; height: 150px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+        .btn { width: 50px; height: 50px; background: rgba(255,255,255,0.3); border-radius: 10px; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; user-select: none; }
+        #action-buttons { position: absolute; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .action-btn { width: 60px; height: 60px; background: rgba(0,0,0,0.5); border-radius: 50%; color: white; display: flex; justify-content: center; align-items: center; }
+    </style>
+</head>
+<body>
+
+    <div id="controls">
+        <div></div><div class="btn" id="up">W</div><div></div>
+        <div class="btn" id="left">A</div><div class="btn" id="down">S</div><div class="btn" id="right">D</div>
+    </div>
+
+    <div id="action-buttons">
+        <div class="action-btn" id="jump">JUMP</div>
+        <div class="action-btn" id="place">BLOCK</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // --- Setup Scene ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+        const camera = new THREE.PerspectiveCamera(75, 16/9, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerWidth * (9/16));
+        document.body.appendChild(renderer.domElement);
+
+        // --- Lighting ---
+        const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+        scene.add(light);
+
+        // --- Ground (Grass) ---
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        const material = new THREE.MeshLambertMaterial({ color: 0x44aa44 });
+        
+        for(let x = -10; x < 10; x++) {
+            for(let z = -10; z < 10; z++) {
+                const cube = new THREE.Mesh(geometry, material);
+                cube.position.set(x, -1, z);
+                scene.add(cube);
+            }
+        }
+
+        // --- Simple Mob (Pink Pig) ---
+        const mobGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+        const mobMat = new THREE.MeshLambertMaterial({ color: 0xffaaaa });
+        const mob = new THREE.Mesh(mobGeo, mobMat);
+        mob.position.set(2, 0, -5);
+        scene.add(mob);
+
+        camera.position.z = 5;
+        camera.position.y = 1;
+
+        // --- Controls Logic ---
+        const move = { fwd: false, bck: false, lft: false, rgt: false };
+        
+        document.getElementById('up').ontouchstart = () => move.fwd = true;
+        document.getElementById('up').ontouchend = () => move.fwd = false;
+        document.getElementById('down').ontouchstart = () => move.bck = true;
+        document.getElementById('down').ontouchend = () => move.bck = false;
+        document.getElementById('left').ontouchstart = () => move.lft = true;
+        document.getElementById('left').ontouchend = () => move.lft = false;
+        document.getElementById('right').ontouchstart = () => move.rgt = true;
+        document.getElementById('right').ontouchend = () => move.rgt = false;
+
+        document.getElementById('place').onclick = () => {
+            const newBlock = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({color: 0x8b4513}));
+            newBlock.position.set(Math.round(camera.position.x), 0, Math.round(camera.position.z - 2));
+            scene.add(newBlock);
+        };
+
+        // --- Game Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if(move.fwd) camera.position.z -= 0.1;
+            if(move.bck) camera.position.z += 0.1;
+            if(move.lft) camera.position.x -= 0.1;
+            if(move.rgt) camera.position.x += 0.1;
+
+            // Simple Mob Movement
+            mob.position.z += Math.sin(Date.now() * 0.001) * 0.02;
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerWidth * (9/16));
+        });
+    </script>
+</body>
+</html>
